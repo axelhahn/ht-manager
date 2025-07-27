@@ -1,0 +1,5 @@
+build/*
+built_packages/*
+external/*
+src/htman__build.php
+src/htman-included.php

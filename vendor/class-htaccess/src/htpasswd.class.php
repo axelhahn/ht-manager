@@ -1,0 +1,342 @@
+<?php
+
+namespace axelhahn;
+
+/**
+ * ======================================================================
+ * 
+ * PHP class to handle htpasswd file
+ * 
+ * After setting a htpasswd file you can
+ * - add - a user and password
+ * - update - a user and password - optional after verifying the current password
+ * - remove - a user
+ * - verify - a password of an existing user
+ * - check - if a given user exists
+ * 
+ * @author www.axel-hahn.de
+ * @license GNU Public License 3.0
+ * @source https://github.com/axelhahn/php-htpasswd/
+ * 
+ * ----------------------------------------------------------------------
+ * 2025-07-18  initial version
+ * 2025-07-21  v1.0
+ * 2025-07-23  v1.1  update phpdoc
+ * 2025-07-24  v1.2  add method getFile()
+ * 2025-07-25  v1.3  fix readFile(); sort users before saving
+ * ======================================================================
+ */
+class htpasswd
+{
+
+    // ----------------------------------------------------------------------
+    // vars
+    // ----------------------------------------------------------------------
+
+    /**
+     * Full path of htpasswd file
+     * @var string
+     */
+    protected string $sHtPasswdFile = '';
+
+    /**
+     * User array with the keys "user" and "pwhash"
+     * @var array
+     */
+    protected array $aItems = [];
+
+
+    /**
+     * Flag: show debug infos?
+     * @var bool
+     */
+    protected bool $bDebug = false;
+
+    // ----------------------------------------------------------------------
+    // constructor
+    // ----------------------------------------------------------------------
+
+    /**
+     * Constructor
+     * @param string $sHtPasswdFile  optional: full path of htpasswd file
+     */
+    public function __construct(string $sHtPasswdFile = '')
+    {
+        if ($sHtPasswdFile) {
+            $this->setFile($sHtPasswdFile);
+        }
+    }
+    // ----------------------------------------------------------------------
+    // methods
+    // ----------------------------------------------------------------------
+
+    /**
+     * Write debug info; only if debugging was activated
+     * 
+     * @see debug()
+     * 
+     * @param string $sMessage
+     * @return void
+     */
+    protected function _wd(string $sMessage): void
+    {
+        if ($this->bDebug) {
+            echo "DEBUG: $sMessage" . PHP_EOL;
+        }
+    }
+
+    /**
+     * Enable or disable debug mode
+     * 
+     * @param bool $bDebug  new value of debug flag
+     * @return void
+     */
+    public function debug(bool $bDebug): void
+    {
+        $this->bDebug = $bDebug;
+    }
+
+    // ----------------------------------------------------------------------
+    // file methods
+    // ----------------------------------------------------------------------
+
+    /**
+     * Read htpasswd file and parse user data.
+     * file data are put in local array
+     * 
+     * @return void
+     */
+    protected function _readFile()
+    {
+        $this->_wd(__METHOD__ . "()");
+        $this->aItems = [];
+        if (file_exists($this->sHtPasswdFile)) {
+            $this->_wd(__METHOD__ . ": file '$this->sHtPasswdFile' exists - reading it");
+            foreach (file($this->sHtPasswdFile)??[] as $line) {
+                $line = trim($line);
+                $aTmp = explode(":", $line);
+                if(count($aTmp) > 1) {                    
+                    $this->aItems[$aTmp[0]] = [
+                        'pwhash' => $aTmp[1],
+                    ];
+                }
+            }
+            ;
+            $this->_wd(__METHOD__ . ": found " . count($this->aItems) . " user(s).");
+        } else {
+            $this->_wd(__METHOD__ . ": file '$this->sHtPasswdFile' does not exist yet.");
+        }
+    }
+
+    /**
+     * Generate content for full htpasswd file
+     * This method is used internally in the _saveFile() method.
+     * You can use this to render a preview of the generated file.
+     * 
+     * @return string
+     */
+    public function generateContent(): string
+    {
+        $this->_wd(__METHOD__ . "()");
+        $sContent = '';
+        $this->_wd(__METHOD__ . ": adding " . count($this->aItems) . " user(s) ...");
+        ksort($this->aItems);
+        foreach ($this->aItems as $sUser => $aItem) {
+            $sContent .= $sUser . ":" . $aItem['pwhash'] . "\n";
+        }
+        return $sContent;
+    }
+
+    /**
+     * Save htpasswd file. It returns true if successful
+     * @return bool
+     */
+    protected function _saveFile()
+    {
+        $this->_wd(__METHOD__ . "()");
+        return !!file_put_contents($this->sHtPasswdFile, $this->generateContent());
+    }
+
+    /**
+     * Set full path of htpasswd file. If it exists its users will be parsed.
+     * 
+     * @param string $sHtPasswdFile  optional: full path of htpasswd file
+     * @return void
+     */
+    public function setFile(string $sHtPasswdFile): void
+    {
+        $this->_wd(__METHOD__ . "(file '$sHtPasswdFile')");
+        if ($sHtPasswdFile !== $this->sHtPasswdFile) {
+            $this->_wd(__METHOD__ . ": file exists");
+            $this->sHtPasswdFile = $sHtPasswdFile;
+            $this->_readFile();
+        } else {
+            $this->_wd(__METHOD__ . ": This is the same file that is already loaded.");
+        }
+    }
+
+    /**
+     * Get current htpasswd file
+     * @return string
+     */
+    public function getFile(): string
+    {
+        return $this->sHtPasswdFile;
+    }
+
+    // ----------------------------------------------------------------------
+    // user methods
+    // ----------------------------------------------------------------------
+
+    /**
+     * Check if a given user exists
+     * @param string $sUser  username
+     * @return bool
+     */
+    protected function _UserExists(string $sUser): bool
+    {
+        $this->_wd(__METHOD__ . "(user '$sUser')");
+        return isset($this->aItems[$sUser]);
+    }
+
+    /**
+     * Add a new user in htpasswd file.
+     * It returns true if successful.
+     * It returns false
+     * - if user already exists
+     * - writing .htpasswd file failed
+     * 
+     * @param string $sUser      username to add
+     * @param string $sPassword  password to encrypt
+     * @return bool
+     */
+    public function add(string $sUser, string $sPassword): bool
+    {
+        $this->_wd(__METHOD__ . "(user '$sUser', password '**********')");
+        if ($this->_UserExists($sUser)) {
+            $this->_wd(__METHOD__ . ": Cannot add user '$sUser', user already exists");
+            return false;
+        }
+
+        $this->_wd(__METHOD__ . ": Adding user ...");
+        $this->aItems[$sUser] = [
+            'pwhash' => password_hash($sPassword, PASSWORD_BCRYPT),
+        ];
+        return $this->_saveFile();
+    }
+
+    /**
+     * Check if a given username exists
+     * It returns true if successful.
+     * It returns false if the user does not exist.
+     * 
+     * @param string $sUser      username to search for
+     * @return bool
+     */
+    public function exists(string $sUser): bool
+    {
+        $this->_wd(__METHOD__ . "(user '$sUser')");
+        return $this->_UserExists($sUser);
+    }
+
+    /**
+     * List all users as array.
+     * You get the <username> as key. The value is a hash with key "pwhash"
+     * 
+     * @return array
+     */
+    public function list(): array
+    {
+        $this->_wd(__METHOD__ . "()");
+        return $this->aItems;
+    }
+
+    /**
+     * Remove an existing user
+     * It returns true if successful.
+     * It returns false
+     * - if user doesn't exist
+     * - writing .htpasswd file failed
+     * 
+     * @param string $sUser      username to remove
+     * @return bool
+     */
+    public function remove(string $sUser): bool
+    {
+        $this->_wd(__METHOD__ . "(user '$sUser')");
+        if (!$this->_UserExists($sUser)) {
+            $this->_wd(__METHOD__ . ": Cannot remove user '$sUser' - it does not exist.");
+            return false;
+        }
+
+        unset($this->aItems[$sUser]);
+        return $this->_saveFile();
+    }
+
+    /**
+     * Update password of an existing user
+     * It returns true if successful.
+     * It returns false
+     * - if user doesn't exist
+     * - if given old password doesn't match (old password is optional)
+     * - writing .htpasswd file failed
+     * 
+     * @param string $sUser         username to update
+     * @param string $sPassword     password
+     * @param string $sOldPassword  optional: old password that must match
+     * @return bool
+     */
+    public function update(string $sUser, string $sPassword, string $sOldPassword = ''): bool
+    {
+        $this->_wd(__METHOD__ . "(user '$sUser', password '**********', old password " . ($sOldPassword ? "**********" : "not set") . ")");
+        if (!$this->_UserExists($sUser)) {
+            $this->_wd(__METHOD__ . ": Cannot update password for '$sUser', user does not exist.");
+            return false;
+        }
+
+        if ($sOldPassword) {
+            if (!password_verify($sOldPassword, $this->aItems[$sUser]['pwhash'])) {
+                $this->_wd(__METHOD__ . ": Old password does not match");
+                return false;
+            }
+            $this->_wd(__METHOD__ . ": Old password matches");
+        } else {
+            $this->_wd(__METHOD__ . ": No password to verify was given");
+        }
+
+        $this->_wd(__METHOD__ . ": Updating password of given user ...");
+        $this->aItems[] = [
+            'user' => $sUser,
+            'pwhash' => password_hash($sPassword, PASSWORD_BCRYPT),
+        ];
+        return $this->_saveFile();
+    }
+
+    /**
+     * Verify password of an existing user
+     * It returns true if successful.
+     * It returns false
+     * - if user doens't exist
+     * - given password doesn't match
+     * 
+     * @param string $sUser         username to check
+     * @param string $sPassword     password to verify
+     * @return bool
+     */
+    public function verifyPassword(string $sUser, string $sPassword): bool
+    {
+        $this->_wd(__METHOD__ . "(user '$sUser', password '**********')");
+        if (!$this->_UserExists($sUser)) {
+            $this->_wd(__METHOD__ . ": Cannot verify - user '$sUser' does not exist");
+            return false;
+        }
+        if (password_verify($sPassword, $this->aItems[$sUser]['pwhash'])) {
+            $this->_wd(__METHOD__ . ": Password matches");
+            return true;
+        } else {
+            $this->_wd(__METHOD__ . ": Password does not match");
+            return false;
+        }
+    }
+
+}
