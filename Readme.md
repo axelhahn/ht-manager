@@ -2,11 +2,17 @@
 
 Ht-manager is an interactive cli tool to simplify management of htpasswd and htgroup files.
 
-This tool is written in PHP 8.
+This tool is written in PHP 8 and uses the classes of
+
+* <https://github.com/axelhahn/php-htpasswd>
+
+---
 
 👤 Author: Axel Hahn \
 🧾 Source: https://github.com/axelhahn/ht-manager/ \
 📜 License: GNU GPL 3.0
+
+---
 
 Using spc the file "src/htman.php" can be compiled to a standalone binary. This was tested on Linux only so far.
 
