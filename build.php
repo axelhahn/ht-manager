@@ -160,7 +160,6 @@ Download    : `$cmdSpcDownload`
 
 Build       : `$cmdSpcBuild`
 
-see https://os-docs.iml.unibe.ch/appmonitor-cli-client/
 ")){
     _abort("Could not write $readme");
 }

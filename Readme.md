@@ -24,6 +24,37 @@ Using spc the file "src/htman.php" can be compiled to a standalone binary. This 
 
 ## Compile
 
-Start `installer.php` to generate SFX and needed files.
+### Requirements
 
-Run `build.php` to merge changes in `src/htman.php` into a newly generated binary.
+Linux packages
+
+* git
+* wget
+* elfpatch
+
+### Compile
+
+### Start once
+
+Start `installer.php` to download the spc binary and let it generate needed files and Micro sfx.
+This compilation takes some minutes.
+
+As long you dont't want to set another php version or include an additional php module you don't need to repeat this step.
+
+### Compile binary
+
+Run `build.php` to merge changes in `src/htman.php` into a newly generated binary. This is done within a second.
+
+Output files on Linux:
+
+built_packages/htman
+built_packages/htman_linux_x86_64
+built_packages/htman_linux_x86_64__README.md
+
+### Usage
+
+Copy built_packages/htman into a bin directory eg /usr/bin/ or ~/bin/ to start it without path.
+
+Start `htman -h` to see supported parameters.
+
+Start `htman` for interactive mode.

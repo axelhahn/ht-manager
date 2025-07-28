@@ -89,7 +89,7 @@ _mkdir($dirBuild);
 
 
 // ----------------------------------------------------------------------
-_h1("Generate include file with all available checks...");
+// _h1("Generate include file with all available checks...");
 // _exec("ln -s $selfdir/$dirExternal/appmonitor/public_html/client $selfdir/src");
 
 _chdir("$selfdir");

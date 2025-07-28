@@ -3,7 +3,7 @@
 
 chdir(__DIR__);
 $FOLDER=dirname(__DIR__);
-global $_VERSION; $_VERSION="0.1";
+global $_VERSION; $_VERSION="0.2";
 
 // ----------------------------------------------------------------------
 // MAIN
@@ -74,6 +74,10 @@ $oCli=new axelhahn\cli($aParamDefs);
 
 if ($oCli->getvalue("help")){
     showheader();
+    echo "  👤 Author: Axel Hahn".PHP_EOL;
+    echo "  🧾 Source: https://github.com/axelhahn/ht-manager/".PHP_EOL;
+    echo "  📜 License: GNU GPL 3.0".PHP_EOL;
+    echo PHP_EOL;
     echo $oCli->showhelp();
     exit(0);
 }
