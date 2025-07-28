@@ -1,11 +1,14 @@
 <?php
 
 $selfdir=dirname(__FILE__);
+$approot=dirname(__DIR__);
 $dirExternal="external";
 $dirBuild="build";
 $dirPackages="built_packages";
 
 // ---------- build with spc
+
+$php_app="Ht-manager";
 
 // php version for spc
 $php_version="8.4.4";
@@ -47,7 +50,7 @@ switch ($myos) {
 }
 $myosextension=$myos=="windows" ? ".exe" : "";
 
-$SPC=str_replace('/', DIRECTORY_SEPARATOR , "$selfdir/$dirExternal/bin/spc$myosextension");
+$SPC=str_replace('/', DIRECTORY_SEPARATOR , "$approot/$dirExternal/bin/spc$myosextension");
 
 $cmdSpcDownload="$SPC download --no-interaction --with-php=$php_version --for-extensions \"$php_libs\"";
 $cmdSpcBuild="$SPC build --no-interaction --build-micro \"$php_libs\"";
