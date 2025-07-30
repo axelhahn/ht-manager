@@ -6,6 +6,7 @@
 
 */
 
+require "config.php";
 require "inc_vars.php";
 require "inc_functions.php";
 
@@ -32,7 +33,7 @@ spc-windows-x64.exe                               2025-02-15 17:30:46      3.9M 
 // MAIN
 // ----------------------------------------------------------------------
 echo "
-  \e[1m$php_app\e[0m
+  \e[1m$PHP_APP\e[0m
   DEVELOPMENT ENVIRONMENT
 
   I N S T A L L E R   *   U P D A T E R
@@ -111,7 +112,7 @@ _h1("Spc - prepare environment");
 _chdir("$approot/$dirBuild");
 
 $bDoBild=true;
-$sDoneData="PHP version $php_version\nExtensions: $php_libs";
+$sDoneData="PHP version $php_version\nExtensions: $PHP_LIBS";
 if(file_exists($doneBuild)){
 
     $sDone=file_get_contents($doneBuild);
@@ -130,7 +131,7 @@ if ($bDoBild){
     _exec($cmdSpcBuild);
     file_put_contents("$doneBuild", date("Y-m-d H:i:s") . "\n$sDoneData\n");
 } else {
-    _skip("Micro already built - php $php_version - extensions \"$php_libs\"");
+    _skip("Micro already built - php $php_version - extensions \"$PHP_LIBS\"");
 }
 
 _h1("Done. You can run build.php to compile the binary.");  

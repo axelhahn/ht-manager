@@ -8,21 +8,35 @@ $dirPackages="built_packages";
 
 // ---------- build with spc
 
-$php_app="Ht-manager";
+$aCompileConfig=include "config.php";
+
+// return [
+//     'appname'=>"Ht-manager",
+//     'php'=>[
+//         "version"=>"8.4.4",
+//         "libs" => [
+//             "readline" => true,
+//             "zlib" => false,
+//         ],
+//     ],
+//     "main" => "src/htman.php",
+//     "merge" => [
+//         "vendor/ahcli/cli.class.php",
+//         "vendor/class-htaccess/src/htgroup.class.php",
+//         "vendor/class-htaccess/src/htpasswd.class.php",
+//     ],
+// ];
+
+
+$PHP_APP=$aCompileConfig['appname'];
 
 // php version for spc
-$php_version="8.4.4";
+$php_version=$aCompileConfig['php']['version'];
 
-// extensions - see https://static-php.dev/en/guide/extensions.html
-$aPhpLibs=[
-    "readline" => true,
-    "zlib" => false,
-];
-
-$php_libs="";
-foreach($aPhpLibs as $key => $bEnabled){
+$PHP_LIBS="";
+foreach($aCompileConfig['php']['libs'] as $key => $bEnabled){
     if($bEnabled){
-        $php_libs.=$bEnabled  ? ($php_libs ? ",":"").$key : '';
+        $PHP_LIBS.=$bEnabled  ? ($PHP_LIBS ? ",":"").$key : '';
     }
 }
 
@@ -52,5 +66,5 @@ $myosextension=$myos=="windows" ? ".exe" : "";
 
 $SPC=str_replace('/', DIRECTORY_SEPARATOR , "$approot/$dirExternal/bin/spc$myosextension");
 
-$cmdSpcDownload="$SPC download --no-interaction --with-php=$php_version --for-extensions \"$php_libs\"";
-$cmdSpcBuild="$SPC build --no-interaction --build-micro \"$php_libs\"";
+$cmdSpcDownload="$SPC download --no-interaction --with-php=$php_version --for-extensions \"$PHP_LIBS\"";
+$cmdSpcBuild="$SPC build --no-interaction --build-micro \"$PHP_LIBS\"";

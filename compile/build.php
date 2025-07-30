@@ -1,12 +1,25 @@
 #!/bin/env php
 <?php
+/**
+ * 
+ * AXELS PHP COMPILE SCRIPT
+ * 
+ * Generate an executable binary for a target platform.
+ * The binary runs without PHP on the target.
+ * 
+ */
 
+// ----------------------------------------------------------------------
+// CONFIG
+// ----------------------------------------------------------------------
+
+require "config.php";
 require("inc_vars.php");
 require("inc_functions.php");
 
-$INFILE="$approot/src/htman.php";
-$INCFILE="$approot/build/htman-included.php";
-$TMPFILE="$approot/$dirPackages/htman.php";
+$INFILE="$approot/$aCompileConfig[main]";
+$MERGED_PHPAPP="$approot/$dirPackages/".str_replace('.php', '', basename($INFILE))."-merged-app.php";
+$MERGED_INCLUDES="$approot/$dirBuild/".str_replace('.php', '', basename($INFILE))."-included.php";
 
 $OUTFILE="$approot/$dirPackages/".str_replace('.php', '', basename($INFILE)).$myosextension;
 $OUTFILE2="$approot/$dirPackages/".str_replace('.php', '', basename($INFILE)).'_'.$myos.'_'.$myarchitecture.$myosextension;
@@ -14,19 +27,13 @@ $OUTFILE2="$approot/$dirPackages/".str_replace('.php', '', basename($INFILE)).'_
 $FLAG_FORCEBUILD=false;
 $FLAG_FULLTEST=false;
 
-$incfile="$approot/$dirBuild/htman-included.php";
 
-$aFiles2Merge=[
-    "vendor/ahcli/cli.class.php",
-    "vendor/class-htaccess/src/htgroup.class.php",
-    "vendor/class-htaccess/src/htpasswd.class.php",
-];
-
-
+// ----------------------------------------------------------------------
+// MAIN
+// ----------------------------------------------------------------------
 
 echo "
-  \e[1m$php_app\e[0m
-  DEVELOPMENT ENVIRONMENT
+  \e[1m$PHP_APP\e[0m
 
   B U I L D E R
 
@@ -69,6 +76,9 @@ if(isset($ARGS['-t']) || isset($ARGS['--test'])){
     $FLAG_FULLTEST=true;
 }
 
+_h1("Configuration");
+print_r($aCompileConfig);
+
 _h1("Startup");
 _chdir($approot);
 _mkdir($dirPackages);
@@ -105,12 +115,12 @@ $out="<?php
     at ".(date("Y-m-d H:i:s"))."
 
     merged files:
-    ".implode("\n    ", $aFiles2Merge)."
+    ".implode("\n    ", $aCompileConfig['merge'])."
 
 */
 ";
 
-foreach($aFiles2Merge as $sMyFile){
+foreach($aCompileConfig['merge'] as $sMyFile){
     echo "- adding $sMyFile\n";
     $sSource=file_get_contents($sMyFile);
     $sSource=preg_replace(
@@ -129,11 +139,11 @@ foreach($aFiles2Merge as $sMyFile){
 }
 
 
-if(file_put_contents($incfile, $out)){
-    _ok("$incfile was written");
+if(file_put_contents($MERGED_INCLUDES, $out)){
+    _ok("$MERGED_INCLUDES was written");
 } 
 
-_exec("php -l \"$incfile\"");
+_exec("php -l \"$MERGED_INCLUDES\"");
 
 // ----------------------------------------------------------------------
 
@@ -147,17 +157,17 @@ file_put_contents(
         $sBuildPhpcode"
 );
 $in=file_get_contents($INFILE);
-$inccode=$sBuildPhpcode . "\n". file_get_contents($INCFILE);
+$inccode=$sBuildPhpcode . "\n". file_get_contents($MERGED_INCLUDES);
 $inccode=str_replace("<?php", "", $inccode);
 
 $tempcode=preg_replace("#\/\/ ---MARK---INCLUDE-CHECKS---START---.*---MARK---INCLUDE-CHECKS---END#s", "$inccode", $in);
 
 // echo "$tempcode";
-if(file_put_contents($TMPFILE, $tempcode)){
-    _ok("$TMPFILE was written");
+if(file_put_contents($MERGED_PHPAPP, $tempcode)){
+    _ok("$MERGED_PHPAPP was written");
 }
-_exec("php -l \"$TMPFILE\"");
-_exec("chmod +x $TMPFILE");
+_exec("php -l \"$MERGED_PHPAPP\"");
+_exec("chmod +x $MERGED_PHPAPP");
 
 // ----------------------------------------------------------------------
 
@@ -165,11 +175,11 @@ _h1("Compile");
 _chdir("$approot/$dirBuild");
 _exec("$SPC \
     micro:combine \
-    \"$TMPFILE\" \
+    \"$MERGED_PHPAPP\" \
     -O \"$OUTFILE\"");
 
-// if(unlink($TMPFILE)){
-//     echo "Cleanup: $TMPFILE was deleted\n";
+// if(unlink($MERGED_PHPAPP)){
+//     echo "Cleanup: $MERGED_PHPAPP was deleted\n";
 // }
 
 // ----------------------------------------------------------------------
@@ -206,7 +216,7 @@ File        : ".basename($OUTFILE2)."
 
 Used SPC    : $versionSPC
 PHP version : $php_version
-PHP modules : $php_libs
+PHP modules : $PHP_LIBS
 
 ## Conmands
 
@@ -227,7 +237,7 @@ _h1("Summary");
 echo "The created files are:
 
 Merged php file:
-- $TMPFILE
+- $MERGED_PHPAPP
 
 Compiled binay:
 - $OUTFILE
