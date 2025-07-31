@@ -20,5 +20,10 @@ return [
         "vendor/<lib>/<file_1>.php",
         "vendor/<lib>/<file_2>.php",
     ],
+    "replace" => [
+        "strings" => [
+            // <what> => <new value>
+        ],
+    ],
 ];
 
