@@ -6,9 +6,9 @@
 
 */
 
-require "config.php";
-require "inc_vars.php";
-require "inc_functions.php";
+require __DIR__."/config.php";
+require __DIR__."/inc_vars.php";
+require __DIR__."/inc_functions.php";
 
 
 $spcUrl="https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-$myos-$myarchitecture$myosextension";
