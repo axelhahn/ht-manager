@@ -6,9 +6,9 @@
 
 */
 
-require "config.php";
-require "inc_vars.php";
-require "inc_functions.php";
+require __DIR__."/config.php";
+require __DIR__."/inc_vars.php";
+require __DIR__."/inc_functions.php";
 
 
 $spcUrl="https://dl.static-php.dev/static-php-cli/spc-bin/nightly/spc-$myos-$myarchitecture$myosextension";
@@ -34,7 +34,6 @@ spc-windows-x64.exe                               2025-02-15 17:30:46      3.9M 
 // ----------------------------------------------------------------------
 echo "
   \e[1m$PHP_APP\e[0m
-  DEVELOPMENT ENVIRONMENT
 
   I N S T A L L E R   *   U P D A T E R
 
@@ -134,5 +133,7 @@ if ($bDoBild){
     _skip("Micro already built - php $php_version - extensions \"$PHP_LIBS\"");
 }
 
-_h1("Done. You can run build.php to compile the binary.");  
+_h1("Done. You can run 'build.php' to compile the binary 🎉");
+echo "\n";
+
 // ----------------------------------------------------------------------
