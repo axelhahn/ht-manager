@@ -25,6 +25,7 @@ namespace axelhahn;
  * 2025-07-24  v1.2  add method getFile()
  * 2025-07-25  v1.3  fix readFile(); sort users before saving
  * 2025-08-08  v1.4  add a comment in 1st line; ignore lines starting with # or ; and fix update()
+ * 2025-08-08  v1.5  add error() method to get the last error
  * ======================================================================
  */
 class htpasswd
@@ -41,11 +42,16 @@ class htpasswd
     protected string $sHtPasswdFile = '';
 
     /**
+     * Last error
+     * @var string
+     */
+    protected string $sLastError = '';
+
+    /**
      * User array with the keys "user" and "pwhash"
      * @var array
      */
     protected array $aItems = [];
-
 
     /**
      * Flag: show debug infos?
@@ -87,6 +93,20 @@ class htpasswd
     }
 
     /**
+     * Write debug info on error and store last error message
+     * 
+     * @see debug()
+     * 
+     * @param string $sMessage
+     * @return void
+     */
+    protected function _error(string $sMessage): void
+    {
+        $this->_wd("ERROR $sMessage");
+        $this->sLastError = $sMessage;
+    }
+
+    /**
      * Enable or disable debug mode
      * 
      * @param bool $bDebug  new value of debug flag
@@ -95,6 +115,16 @@ class htpasswd
     public function debug(bool $bDebug): void
     {
         $this->bDebug = $bDebug;
+    }
+
+    /**
+     * Get the last error
+     * 
+     * @return string
+     */
+    public function error(): string
+    {
+        return $this->sLastError;
     }
 
     // ----------------------------------------------------------------------
@@ -158,7 +188,12 @@ class htpasswd
     protected function _saveFile()
     {
         $this->_wd(__METHOD__ . "()");
-        return !!file_put_contents($this->sHtPasswdFile, $this->generateContent());
+        if (file_put_contents($this->sHtPasswdFile, $this->generateContent())){
+            return true;
+        } else {
+            $this->_error(__METHOD__ . ": file '$this->sHtPasswdFile' cannot be written.");
+            return false;
+        }
     }
 
     /**
@@ -170,13 +205,11 @@ class htpasswd
     public function setFile(string $sHtPasswdFile): void
     {
         $this->_wd(__METHOD__ . "(file '$sHtPasswdFile')");
-        if ($sHtPasswdFile !== $this->sHtPasswdFile) {
-            $this->_wd(__METHOD__ . ": file exists");
-            $this->sHtPasswdFile = $sHtPasswdFile;
-            $this->_readFile();
-        } else {
-            $this->_wd(__METHOD__ . ": This is the same file that is already loaded.");
+        if ($sHtPasswdFile == $this->sHtPasswdFile) {
+            $this->_wd(__METHOD__ . ": This is the same file that was already set. Reloading it.");
         }
+        $this->sHtPasswdFile = $sHtPasswdFile;
+        $this->_readFile();
     }
 
     /**
@@ -218,7 +251,7 @@ class htpasswd
     {
         $this->_wd(__METHOD__ . "(user '$sUser', password '**********')");
         if ($this->_UserExists($sUser)) {
-            $this->_wd(__METHOD__ . ": Cannot add user '$sUser', user already exists");
+            $this->_error(__METHOD__ . ": Cannot add user '$sUser', user already exists");
             return false;
         }
 
@@ -269,7 +302,7 @@ class htpasswd
     {
         $this->_wd(__METHOD__ . "(user '$sUser')");
         if (!$this->_UserExists($sUser)) {
-            $this->_wd(__METHOD__ . ": Cannot remove user '$sUser' - it does not exist.");
+            $this->_error(__METHOD__ . ": Cannot remove user '$sUser' - it does not exist.");
             return false;
         }
 
@@ -294,13 +327,13 @@ class htpasswd
     {
         $this->_wd(__METHOD__ . "(user '$sUser', password '**********', old password " . ($sOldPassword ? "**********" : "not set") . ")");
         if (!$this->_UserExists($sUser)) {
-            $this->_wd(__METHOD__ . ": Cannot update password for '$sUser', user does not exist.");
+            $this->_error(__METHOD__ . ": Cannot update password for '$sUser', user does not exist.");
             return false;
         }
 
         if ($sOldPassword) {
             if (!password_verify($sOldPassword, $this->aItems[$sUser]['pwhash'])) {
-                $this->_wd(__METHOD__ . ": Old password does not match");
+                $this->_error(__METHOD__ . ": Old password does not match");
                 return false;
             }
             $this->_wd(__METHOD__ . ": Old password matches");
@@ -330,14 +363,14 @@ class htpasswd
     {
         $this->_wd(__METHOD__ . "(user '$sUser', password '**********')");
         if (!$this->_UserExists($sUser)) {
-            $this->_wd(__METHOD__ . ": Cannot verify - user '$sUser' does not exist");
+            $this->_error(__METHOD__ . ": Cannot verify - user '$sUser' does not exist");
             return false;
         }
         if (password_verify($sPassword, $this->aItems[$sUser]['pwhash'])) {
             $this->_wd(__METHOD__ . ": Password matches");
             return true;
         } else {
-            $this->_wd(__METHOD__ . ": Password does not match");
+            $this->_error(__METHOD__ . ": Password does not match");
             return false;
         }
     }

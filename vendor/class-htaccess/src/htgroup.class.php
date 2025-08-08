@@ -27,6 +27,7 @@ namespace axelhahn;
  * 2025-07-24  v1.2  add method getFile()
  * 2025-07-25  v1.3  fix readFile(); sort groups before saving
  * 2025-08-08  v1.4  add a comment in 1st line; ignore lines starting with # or ;
+ * 2025-08-08  v1.5  add error() method to get the last error
  * ======================================================================
  */
 class htgroup
@@ -43,11 +44,16 @@ class htgroup
     protected string $sHtGroupFile = '';
 
     /**
+     * Last error
+     * @var string
+     */
+    protected string $sLastError = '';
+
+    /**
      * Groups as array with the keys "groupname" and list of users as value
      * @var array
      */
     protected array $aGroups = [];
-
 
     /**
      * Flag: show debug infos?
@@ -90,6 +96,20 @@ class htgroup
     }
 
     /**
+     * Write debug info on error and store last error message
+     * 
+     * @see debug()
+     * 
+     * @param string $sMessage
+     * @return void
+     */
+    protected function _error(string $sMessage): void
+    {
+        $this->_wd("ERROR $sMessage");
+        $this->sLastError = $sMessage;
+    }
+
+    /**
      * Enable or disable debug mode
      * 
      * @param bool $bDebug  new value of debug flag
@@ -98,6 +118,16 @@ class htgroup
     public function debug(bool $bDebug): void
     {
         $this->bDebug = $bDebug;
+    }
+
+    /**
+     * Get the last error
+     * 
+     * @return string
+     */
+    public function error(): string
+    {
+        return $this->sLastError;
     }
 
     // ----------------------------------------------------------------------
@@ -160,7 +190,12 @@ class htgroup
     protected function _saveFile(): bool
     {
         $this->_wd(__METHOD__ . "()");
-        return !!file_put_contents($this->sHtGroupFile, $this->generateContent());
+        if(file_put_contents($this->sHtGroupFile, $this->generateContent())){
+            return true;
+        } else {
+            $this->_error(__METHOD__ . ": file '$this->sHtGroupFile' cannot be written.");
+            return false;
+        }
     }
 
     /**
@@ -173,12 +208,10 @@ class htgroup
     {
         $this->_wd(__METHOD__ . "(file '$sHtGroupFile')");
         if ($sHtGroupFile !== $this->sHtGroupFile) {
-            $this->_wd(__METHOD__ . ": file exists");
-            $this->sHtGroupFile = $sHtGroupFile;
-            $this->_readFile();
-        } else {
-            $this->_wd(__METHOD__ . ": This is the same file that is already loaded.");
+            $this->_wd(__METHOD__ . ": This is the same file that was already set. Reloading it.");
         }
+        $this->sHtGroupFile = $sHtGroupFile;
+        $this->_readFile();
     }
 
     /**
@@ -219,7 +252,7 @@ class htgroup
     {
         $this->_wd(__METHOD__ . "(group '$sGroup')");
         if ($this->_groupExists($sGroup)) {
-            $this->_wd(__METHOD__ . ": Cannot add group '$sGroup', group already exists");
+            $this->_error(__METHOD__ . ": Cannot add group '$sGroup', group already exists");
             return false;
         }
 
@@ -269,7 +302,7 @@ class htgroup
     {
         $this->_wd(__METHOD__ . "(group '$sGroup')");
         if (!$this->_groupExists($sGroup)) {
-            $this->_wd(__METHOD__ . ": Cannot show members of group '$sGroup', group doesn't exist.");
+            $this->_error(__METHOD__ . ": Cannot show members of group '$sGroup', group doesn't exist.");
             return false;
         }
 
@@ -291,7 +324,7 @@ class htgroup
     {
         $this->_wd(__METHOD__ . "(group '$sGroup')");
         if (!$this->_groupExists($sGroup)) {
-            $this->_wd(__METHOD__ . ": Cannot remove group '$sGroup' - it does not exist.");
+            $this->_error(__METHOD__ . ": Cannot remove group '$sGroup' - it does not exist.");
             return false;
         }
 
@@ -314,13 +347,12 @@ class htgroup
     {
         $this->_wd(__METHOD__ . "(group '$sGroup', new group '$sNewGroup')");
         if (!$this->_groupExists($sGroup)) {
-            $this->_wd(__METHOD__ . ": Cannot update password for '$sGroup', group does not exist.");
+            $this->_error(__METHOD__ . ": Cannot update password for '$sGroup', group does not exist.");
             return false;
         }
         $this->aGroups[$sNewGroup] = $this->aGroups[$sGroup];
         unset($this->aGroups[$sGroup]);
         return $this->_saveFile();
-
     }
 
     // ----------------------------------------------------------------------
@@ -342,11 +374,11 @@ class htgroup
     {
         $this->_wd(__METHOD__ . "(user '$sUser', group '$sGroup')");
         if (!$this->_groupExists($sGroup)) {
-            $this->_wd(__METHOD__ . ": Cannot add user '$sUser' to group '$sGroup', group does not exist.");
+            $this->_error(__METHOD__ . ": Cannot add user '$sUser' to group '$sGroup', group does not exist.");
             return false;
         }
         if(in_array($sUser, $this->aGroups[$sGroup])) {
-            $this->_wd(__METHOD__ . ": User '$sUser' is member of group '$sGroup' already.");
+            $this->_error(__METHOD__ . ": User '$sUser' is member of group '$sGroup' already.");
             return false;
         }
         $this->aGroups[$sGroup][] = $sUser;
@@ -369,14 +401,14 @@ class htgroup
     {
         $this->_wd(__METHOD__ . "(user '$sUser', group '$sGroup')");
         if (!$this->_groupExists($sGroup)) {
-            $this->_wd(__METHOD__ . ": Cannot add user '$sUser' to group '$sGroup', group does not exist.");
+            $this->_error(__METHOD__ . ": Cannot add user '$sUser' to group '$sGroup', group does not exist.");
             return false;
         }
         if (($key = array_search($sUser, $this->aGroups[$sGroup])) !== false) {
             $this->_wd(__METHOD__ . " removing key $key");
             unset($this->aGroups[$sGroup][$key]);
         } else {
-            $this->_wd(__METHOD__ . ": Cannot remove user '$sUser' from group '$sGroup', user does not exist in it.");
+            $this->_error(__METHOD__ . ": Cannot remove user '$sUser' from group '$sGroup', user is not a member.");
             return false;
         }
         return $this->_saveFile();
