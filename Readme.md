@@ -23,7 +23,49 @@ Just run `php src/htman.php`.
 
 You cannot move the script around - it includes a few files from vendor directory.
 
+The script supports command line parameters.
+
+```txt
+php src/htman.php -h
+      _____________
+_____/  A x e l s  \_________________________________________________
+
+   _______ __                                                      
+  |   |   |  |_ ______.--------.---.-.-----.---.-.-----.-----.----.
+  |       |   _|______|        |  _  |     |  _  |  _  |  -__|   _|
+  |___|___|____|      |__|__|__|___._|__|__|___._|___  |_____|__|  
+                                                 |_____|      v0.3
+  👤 Author: Axel Hahn
+  🧾 Source: https://github.com/axelhahn/ht-manager/
+  📜 License: GNU GPL 3.0
+
+HELP:
+Manage htpasswd and htgroups
+
+PARAMETERS:
+  -d
+  --debug (without value)
+    Debug mode.
+    Show debug messages on actions.
+
+  -f
+  --folder [value] (value required)
+    Folder name where to put .htpasswd an .htgroup
+    Set a folder where to handle the .htpasswd and .htgroup files.
+    If a value is given then it will be checked against regex /./i
+
+  -h
+  --help (without value)
+    Show help and exit
+
+  -v
+  --version (without value)
+    Show version and exit
+```
+
 ## Compile
+
+⚠️ **!!! WORK IN PROGRESS !!!**
 
 `src/htman.php`can be compiled into a standalone binary with the delivered scripts by using SPC (check out <https://static-php.dev/>). This was tested on Linux.
 
