@@ -20,5 +20,14 @@ return [
         "vendor/class-htaccess/src/htgroup.class.php",
         "vendor/class-htaccess/src/htpasswd.class.php",
     ],
+    "replace" => [
+        "strings" => [
+            "namespace axelhahn;" => "",
+            "new axelhahn\cli(" => "new cli(",
+            "new axelhahn\htgroup(" => "new htgroup(",
+            "new axelhahn\htpasswd(" => "new htpasswd(",
+        ],
+    ],
+
 ];
 

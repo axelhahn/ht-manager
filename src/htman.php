@@ -9,10 +9,11 @@ global $_VERSION; $_VERSION="0.4";
 // MAIN
 // ----------------------------------------------------------------------
 
+// ---MARK---INCLUDE-CHECKS---START---
 require_once '../vendor/ahcli/cli.class.php';
 require_once('../vendor/class-htaccess/src/htgroup.class.php');
 require_once('../vendor/class-htaccess/src/htpasswd.class.php');
-
+// ---MARK---INCLUDE-CHECKS---END---
 
 $aParamDefs=[
     'label' => 'HT Manager',

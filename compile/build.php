@@ -18,7 +18,7 @@ require __DIR__."/inc_vars.php";
 require __DIR__."/inc_functions.php";
 
 $INFILE="$approot/$aCompileConfig[main]";
-$MERGED_PHPAPP="$approot/$dirPackages/".str_replace('.php', '', basename($INFILE))."-merged-app.php";
+$MERGED_PHPAPP="$approot/$dirPackages/".str_replace('.php', '', basename($INFILE)).".php";
 $MERGED_INCLUDES="$approot/$dirBuild/".str_replace('.php', '', basename($INFILE))."-included.php";
 
 $OUTFILE="$approot/$dirPackages/".str_replace('.php', '', basename($INFILE)).$myosextension;
@@ -228,7 +228,7 @@ $versionSPC=system("$SPC --version");
 $versionBuiltBin=system("php $INFILE --version");
 
 if (!file_put_contents($readme, 
-    "# Build infos $versionBuiltBin
+    "# Build infos $aCompileConfig[appname] v$versionBuiltBin
 
 Date        : $sBuildDate
 

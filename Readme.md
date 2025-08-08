@@ -65,8 +65,6 @@ PARAMETERS:
 
 ## Compile
 
-⚠️ **!!! WORK IN PROGRESS !!!**
-
 `src/htman.php`can be compiled into a standalone binary with the delivered scripts by using SPC (check out <https://static-php.dev/>). This was tested on Linux.
 
 A compiled binary is a single binary without dependencies. You can put onto a machine of the same architecture. On your targets no PHP is needed.
@@ -107,7 +105,7 @@ Compiled binay:
 ### Usage
 
 Copy `built_packages/htman` into a bin directory eg `/usr/bin/` or `~/bin/` to start it without path on any system without PHP installed.
-On Systems with PHP you can deploy `built_packages/htman.php`. This is a merged php script that includes all needed files.
+On Systems with PHP you can deploy `built_packages/htman.php` as single script. This is a merged php script that includes all needed files.
 
 Start `htman -h` to see supported parameters.
 
