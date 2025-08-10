@@ -23,45 +23,18 @@ Just run `php src/htman.php`.
 
 You cannot move the script around - it includes a few files from vendor directory.
 
-The script supports command line parameters.
+## Use merged php script or binary
 
-```txt
-php src/htman.php -h
-      _____________
-_____/  A x e l s  \_________________________________________________
+The sources can be compiled into a single file.
 
-   _______ __                                                      
-  |   |   |  |_ ______.--------.---.-.-----.---.-.-----.-----.----.
-  |       |   _|______|        |  _  |     |  _  |  _  |  -__|   _|
-  |___|___|____|      |__|__|__|___._|__|__|___._|___  |_____|__|  
-                                                 |_____|      v0.3
-  👤 Author: Axel Hahn
-  🧾 Source: https://github.com/axelhahn/ht-manager/
-  📜 License: GNU GPL 3.0
+* a single php script and 
+* a binary using SPC 
 
-HELP:
-Manage htpasswd and htgroups
+Check the releases page <https://github.com/axelhahn/ht-manager/releases/> to get pre compiled files.
 
-PARAMETERS:
-  -d
-  --debug (without value)
-    Debug mode.
-    Show debug messages on actions.
+Copy the php script or binary to `/usr/bin` or `~/bin/` to start it wotout path.
 
-  -f
-  --folder [value] (value required)
-    Folder name where to put .htpasswd an .htgroup
-    Set a folder where to handle the .htpasswd and .htgroup files.
-    If a value is given then it will be checked against regex /./i
-
-  -h
-  --help (without value)
-    Show help and exit
-
-  -v
-  --version (without value)
-    Show version and exit
-```
+Or compile it yourself. See the next chapter.
 
 ## Compile
 
@@ -104,9 +77,47 @@ Compiled binay:
 
 ### Usage
 
-Copy `built_packages/htman` into a bin directory eg `/usr/bin/` or `~/bin/` to start it without path on any system without PHP installed.
+Copy `built_packages/htman` into a bin directory eg `/usr/bin/` or `~/bin/` (or create a softlink) to start it without path on any system without PHP installed.
 On Systems with PHP you can deploy `built_packages/htman.php` as single script. This is a merged php script that includes all needed files.
+
+Start `htman` for interactive mode.
 
 Start `htman -h` to see supported parameters.
 
-Start `htman` for interactive mode.
+```txt
+php src/htman.php -h
+      _____________
+_____/  A x e l s  \_________________________________________________
+
+   _______ __                                                      
+  |   |   |  |_ ______.--------.---.-.-----.---.-.-----.-----.----.
+  |       |   _|______|        |  _  |     |  _  |  _  |  -__|   _|
+  |___|___|____|      |__|__|__|___._|__|__|___._|___  |_____|__|  
+                                                 |_____|      v0.4
+  👤 Author: Axel Hahn
+  🧾 Source: https://github.com/axelhahn/ht-manager/
+  📜 License: GNU GPL 3.0
+
+HELP:
+Manage htpasswd and htgroups
+
+PARAMETERS:
+  -d
+  --debug (without value)
+    Debug mode.
+    Show debug messages on actions.
+
+  -f
+  --folder [value] (value required)
+    Folder name where to put .htpasswd an .htgroup
+    Set a folder where to handle the .htpasswd and .htgroup files.
+    If a value is given then it will be checked against regex /./i
+
+  -h
+  --help (without value)
+    Show help and exit
+
+  -v
+  --version (without value)
+    Show version and exit
+```
