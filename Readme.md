@@ -16,12 +16,12 @@ This tool is written in PHP 8 and uses the classes of
 
 ![Screenshot](screenshot-01.png)
 
-## Use php script
+## For PHP developers: Use php script
 
 You can use the php script directly if you have a php interpreter installed.
 Just run `php src/htman.php`.
 
-You cannot move the script around - it includes a few files from vendor directory.
+BUT: You cannot move the script around - it includes a few files from vendor directory.
 
 ## Use merged php script or binary
 
@@ -30,9 +30,9 @@ The sources can be compiled into a single file.
 * a single php script and 
 * a binary using SPC 
 
-Check the releases page <https://github.com/axelhahn/ht-manager/releases/> to get pre compiled files.
+Check the releases page <https://github.com/axelhahn/ht-manager/releases/> to get the merged script or pre compiled file.
 
-Copy the php script or binary to `/usr/bin` or `~/bin/` to start it wotout path.
+Copy the php script or binary to `/usr/bin` or `~/bin/` to start it witout path.
 
 Or compile it yourself. See the next chapter.
 
