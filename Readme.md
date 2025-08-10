@@ -75,7 +75,7 @@ Compiled binay:
 - ./built_packages/htman_linux_x86_64__README.md
 ```
 
-### Usage
+## Usage
 
 Copy `built_packages/htman` into a bin directory eg `/usr/bin/` or `~/bin/` (or create a softlink) to start it without path on any system without PHP installed.
 On Systems with PHP you can deploy `built_packages/htman.php` as single script. This is a merged php script that includes all needed files.
