@@ -126,7 +126,9 @@ $out="<?php
 
 foreach($aCompileConfig['merge'] as $sMyFile){
     echo "- adding $sMyFile\n";
-    $sSource=file_get_contents($sMyFile);
+    if(!$sSource=file_get_contents($sMyFile)){
+        _abort("Failed to read '$sMyFile'");
+    }
     $sSource=preg_replace(
         [
             "/(inlude[\ \_].*;)/",
@@ -139,7 +141,7 @@ foreach($aCompileConfig['merge'] as $sMyFile){
         ], 
         $sSource
     );
-    $out.="$sSource\n";
+    $out.="\n\n// ---------- START $sMyFile\n$sSource\n// ---------- END $sMyFile\n\n";
 }
 
 
@@ -172,7 +174,7 @@ echo "Merging PHP code...
 ";
 
 // code of main script
-$in=file_get_contents($INFILE);
+$sSourceMain=file_get_contents($INFILE);
 
 // set of all merged included files
 $inccode=file_get_contents($MERGED_INCLUDES);
@@ -180,7 +182,7 @@ $inccode=str_replace("<?php", "", $inccode);
 
 
 echo "Insert merged includes...\n";
-$tempcode=preg_replace("#\/\/ ---MARK---INCLUDE-CHECKS---START---.*---MARK---INCLUDE-CHECKS---END---#s", $inccode, $in);
+$tempcode=preg_replace("#\/\/ ---MARK---INCLUDE-CHECKS---START---.*---MARK---INCLUDE-CHECKS---END---#s", $inccode, $sSourceMain);
 
 echo "Replace custom strings...\n";
 $aStringReplace=$aCompileConfig["replace"]["strings"]??[];

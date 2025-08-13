@@ -3,7 +3,7 @@
 
 chdir(__DIR__);
 $FOLDER=dirname(__DIR__);
-global $_VERSION; $_VERSION="0.4";
+global $_VERSION; $_VERSION="0.5";
 
 // ----------------------------------------------------------------------
 // MAIN
@@ -226,9 +226,24 @@ while(true){
     echo chr(27).chr(91).'H'.chr(27).chr(91).'J';
     showheader();
 
-    $oCli->color('info', "  Folder: '$FOLDER'".PHP_EOL
-    ."    users : $iUserCount\n    groups: $iGroupCount\n\n"
-    );
+    if(!file_exists($oHtpasswd->getFile())
+        && !file_exists($oHtgroup->getFile())){
+        h2("Welcome!", "The folder '$FOLDER'".PHP_EOL."  has no .htpasswd nor .htgroup file.");
+        echo "Not yet? Or are we in the wrong folder?".PHP_EOL
+            .PHP_EOL
+            ."Add a first user to create a new .htpasswd file here.".PHP_EOL
+            ."Or switch to a another folder.".PHP_EOL
+            .PHP_EOL
+            ;
+        // $oCli->_cliInput(" Press Return to continue > ", "");
+    } else {
+        $oCli->color('info', 
+            "  -- 📁 Folder: '$FOLDER'".PHP_EOL
+            ."     |".PHP_EOL
+            ."     +-- 👤 users : $iUserCount".PHP_EOL
+            ."     `-- 👥 groups: $iGroupCount".PHP_EOL.PHP_EOL
+        );
+    }
 
     $sReset=$oCli->getcolor('reset');
 
@@ -364,7 +379,7 @@ while(true){
                         $sGroups.=($sGroups ? ", ": "") . "$sGroup";
                     }
                 }
-                printf("  %-10s %s\n", "$sUser", $sGroups ? "👥 $sGroups": "(no group)");
+                printf("  %-10s %s\n", "$sUser", $sGroups ? "👥 $sGroups": $oCli->getcolor('dark gray')."(no group)");
             }
             if(count($oHtpasswd->list())==0){
                 $oCli->color('error', "No users found.".PHP_EOL);
@@ -377,7 +392,7 @@ while(true){
             $oCli->color('cli');
             foreach ($oHtgroup->list() as $sGroup){
                 $aMembers=$oHtgroup->members($sGroup)??[];
-                printf("  %-10s %s\n\n", "👥 $sGroup", count($aMembers) ? "\n     👤 " . implode("\n     👤 ", $aMembers): "(no members)");
+                printf("  %-10s %s\n\n", "👥 $sGroup", count($aMembers) ? "\n     👤 " . implode("\n     👤 ", $aMembers): $oCli->getcolor('dark gray')."(no members)");
             }
             if(count($oHtgroup->list())==0){
                 $oCli->color('error', "No group was found.".PHP_EOL);

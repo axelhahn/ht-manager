@@ -17,6 +17,7 @@ return [
     "main" => "src/htman.php",
     "merge" => [
         "vendor/ahcli/cli.class.php",
+        "vendor/class-htaccess/src/ht-base.class.php",
         "vendor/class-htaccess/src/htgroup.class.php",
         "vendor/class-htaccess/src/htpasswd.class.php",
     ],

@@ -2,6 +2,8 @@
 
 namespace axelhahn;
 
+require_once __DIR__ . '/ht-base.class.php';
+
 /**
  * ======================================================================
  * 
@@ -26,9 +28,10 @@ namespace axelhahn;
  * 2025-07-25  v1.3  fix readFile(); sort users before saving
  * 2025-08-08  v1.4  add a comment in 1st line; ignore lines starting with # or ; and fix update()
  * 2025-08-08  v1.5  add error() method to get the last error
+ * 2025-08-12  v1.6  extend ht-base class
  * ======================================================================
  */
-class htpasswd
+class htpasswd extends htbase
 {
 
     // ----------------------------------------------------------------------
@@ -42,22 +45,10 @@ class htpasswd
     protected string $sHtPasswdFile = '';
 
     /**
-     * Last error
-     * @var string
-     */
-    protected string $sLastError = '';
-
-    /**
      * User array with the keys "user" and "pwhash"
      * @var array
      */
     protected array $aItems = [];
-
-    /**
-     * Flag: show debug infos?
-     * @var bool
-     */
-    protected bool $bDebug = false;
 
     // ----------------------------------------------------------------------
     // constructor
@@ -72,59 +63,6 @@ class htpasswd
         if ($sHtPasswdFile) {
             $this->setFile($sHtPasswdFile);
         }
-    }
-    // ----------------------------------------------------------------------
-    // methods
-    // ----------------------------------------------------------------------
-
-    /**
-     * Write debug info; only if debugging was activated
-     * 
-     * @see debug()
-     * 
-     * @param string $sMessage
-     * @return void
-     */
-    protected function _wd(string $sMessage): void
-    {
-        if ($this->bDebug) {
-            echo "DEBUG: $sMessage" . PHP_EOL;
-        }
-    }
-
-    /**
-     * Write debug info on error and store last error message
-     * 
-     * @see debug()
-     * 
-     * @param string $sMessage
-     * @return void
-     */
-    protected function _error(string $sMessage): void
-    {
-        $this->_wd("ERROR $sMessage");
-        $this->sLastError = $sMessage;
-    }
-
-    /**
-     * Enable or disable debug mode
-     * 
-     * @param bool $bDebug  new value of debug flag
-     * @return void
-     */
-    public function debug(bool $bDebug): void
-    {
-        $this->bDebug = $bDebug;
-    }
-
-    /**
-     * Get the last error
-     * 
-     * @return string
-     */
-    public function error(): string
-    {
-        return $this->sLastError;
     }
 
     // ----------------------------------------------------------------------
