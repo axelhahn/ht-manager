@@ -115,7 +115,7 @@ $sDoneData="PHP version $php_version\nExtensions: $PHP_LIBS";
 if(file_exists($doneBuild)){
 
     $sDone=file_get_contents($doneBuild);
-    if (strstr($sDone, $sDoneData)>=0){
+    if (strstr($sDone, $sDoneData)>""){
         $bDoBild=false;
     }
 }
