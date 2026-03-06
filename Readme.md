@@ -5,6 +5,7 @@ Ht-manager is an interactive cli tool to simplify management of htpasswd and htg
 This tool is written in PHP 8 and uses the classes of
 
 * <https://github.com/axelhahn/php-htpasswd>
+* <https://github.com/axelhahn/ahcli>
 
 ---
 
