@@ -2,8 +2,8 @@
 <?php
 
 chdir(__DIR__);
-$FOLDER=dirname(__DIR__);
-global $_VERSION; $_VERSION="0.5";
+global $FOLDER; $FOLDER=dirname(__DIR__);
+global $_VERSION; $_VERSION="0.6";
 
 // ----------------------------------------------------------------------
 // MAIN
@@ -41,10 +41,24 @@ $aParamDefs=[
             'description' => '',
         ],
         'version'=>[
-            'short' => 'v',
+            'short' => 'V',
             'value'=> CLIVALUE_NONE,
             'shortinfo' => 'Show version and exit',
             'description' => '',
+        ],
+        'add-user'=>[
+            'short' => 'a',
+            'value'=> CLIVALUE_OPTIONAL,
+            // 'pattern'=>'/./i',
+            'shortinfo' => 'Add a user',
+            'description' => 'Add a user to the .htpasswd file.',
+        ],
+        'list-user'=>[
+            'short' => 'l',
+            'value'=> CLIVALUE_OPTIONAL,
+            // 'pattern'=>'/./i',
+            'shortinfo' => 'Add a user',
+            'description' => 'Add a user to the .htpasswd file.',
         ],
     ],
 ];
@@ -181,6 +195,315 @@ function _selectGroup(bool $bAutoselectSingleGroup=true, string $sPrefix='Groupn
     $oCli->color('reset', "Existing groups:".PHP_EOL);        
     return _selectItem($sPrefix, $oHtgroup->list(), $bAutoselectSingleGroup, $bForeceInput);
 }
+
+// ----------------------------------------------------------------------
+// ACTIONS
+// ----------------------------------------------------------------------
+
+// ---- USER ACTIONS
+
+function actionUserShowfile()
+{
+    global $oHtpasswd, $oCli;
+    $sFile=$oHtpasswd->getFile();
+    h2("File: $sFile", "Content of current user file");
+    if(file_exists($sFile)){
+        $oCli->color("cli");
+        echo file_get_contents($sFile);
+        $oCli->color("reset");
+    } else {
+        $oCli->color('error', "ERROR: File '$sFile' doesn't exist yet.".PHP_EOL);
+    }
+}
+
+function actionUserAdd(){
+    global $oHtpasswd, $oCli, $bDebugActions;
+
+    h2("Add user", "Add a new user in ".basename($oHtpasswd->getFile()));
+    $sUser=_selectUser(false, "New user", true);
+    // $sUser=$oCli->_cliInput("Username : ", "");
+    if ($sUser) {
+        if(!$oHtpasswd->exists($sUser)){
+            
+            $sPW=$oCli->_cliInput("Password : ", "");
+            if ($sPW) {
+                $oHtpasswd->debug($bDebugActions);
+                $bSuccess=$oHtpasswd->add($sUser, $sPW);
+                $oHtpasswd->debug(false);
+                if($bSuccess){
+                    $oCli->color('ok', "OK, user was added.".PHP_EOL);
+                } else {
+                    $oCli->color('error', "Action failed.".PHP_EOL.$oHtpasswd->error().PHP_EOL);
+                }
+            } else {
+                $oCli->color('error', "Doing nothing - password is empty.".PHP_EOL);
+            }
+        } else {
+            $oCli->color('error', "User already exists.".PHP_EOL);
+        }
+    } else {
+        $oCli->color('error', "Doing nothing.".PHP_EOL);
+    }
+
+}
+
+function actionUserList(){
+    global $oHtpasswd, $oHtgroup, $oCli, $bDebugActions;
+
+    h2("List users", "Current users and their groups");
+    $oCli->color('cli');
+    foreach(array_keys($oHtpasswd->list()) as $sUser){
+        $sGroups="";
+        foreach ($oHtgroup->list() as $sGroup){
+            if (in_array($sUser, $oHtgroup->members($sGroup))) {
+                $sGroups.=($sGroups ? ", ": "") . "$sGroup";
+            }
+        }
+        printf("  %-10s %s\n", "$sUser", $sGroups ? "👥 $sGroups": $oCli->getcolor('dark gray')."(no group)");
+    }
+    if(count($oHtpasswd->list())==0){
+        $oCli->color('error', "No users found.".PHP_EOL);
+    }
+    $oCli->color('reset');
+}
+
+function actionUserRemove(){
+    global $oHtpasswd, $oHtgroup,$oCli, $bDebugActions;
+    h2("Remove a user", "Remove a user from ".basename($oHtpasswd->getFile()));
+    $sUser=_selectUser(false, "Usename to remove");
+    if($sUser){
+        $sGroups="";
+        foreach ($oHtgroup->list() as $sGroup){
+            if (in_array($sUser, $oHtgroup->members($sGroup))) {
+                $sGroups.=($sGroups ? ", ": "") . "$sGroup";
+            }
+        }
+        if($sGroups){
+            $oCli->color('error', "Aborting. Remove user from these groups first: $sGroups.".PHP_EOL);
+        } else {
+            $oHtpasswd->debug($bDebugActions);
+            $bSuccess=$oHtpasswd->remove($sUser);
+            $oHtpasswd->debug(false);
+            if($bSuccess){
+                $oCli->color('ok', "OK, user was removed.".PHP_EOL);
+            } else {
+                $oCli->color('error', "Action failed.".PHP_EOL.$oHtpasswd->error().PHP_EOL);
+            }
+        }
+    } else {
+        $oCli->color('error', "Doing nothing.".PHP_EOL);
+    }
+}
+function actionUserSetPassword(){
+    global $oHtpasswd, $oHtgroup,$oCli, $bDebugActions;
+    h2("Set password", "Set a new password for a selected user");
+    $sUser=_selectUser(true);
+    if($sUser){
+        $sPW=trim($oCli->_cliInput("New password : ", ""));
+        if($sPW){
+            $oHtpasswd->debug($bDebugActions);
+            $bSuccess=$oHtpasswd->update($sUser, $sPW);
+            $oHtpasswd->debug(false);
+            if($bSuccess){
+                $oCli->color('ok', "OK, password was changed.".PHP_EOL);
+            } else {
+                $oCli->color('error', "Action failed.".PHP_EOL.$oHtpasswd->error().PHP_EOL);
+            }
+        } else {
+            $oCli->color('error', "Doing nothing. No password was set".PHP_EOL);
+        }
+    } else {
+        $oCli->color('error', "Doing nothing.".PHP_EOL);
+    }    
+}
+
+// ---- GROUP ACTIONS
+
+function actionGroupAdd(){
+    global $oHtgroup, $oCli, $bDebugActions;
+    h2("Add group", "Add a new group in ".basename($oHtgroup->getFile()));
+    $sGroup=_selectGroup(false, "New Group", true);
+    if ($sGroup) {
+        if(!$oHtgroup->exists($sGroup)){
+            
+            $oHtgroup->debug($bDebugActions);
+            $bSuccess=$oHtgroup->add($sGroup);
+            $oHtgroup->debug(false);
+            if($bSuccess){
+                $oCli->color('ok', "OK, group was added.".PHP_EOL);
+            } else {
+                $oCli->color('error', "Action failed.".PHP_EOL.$oHtgroup->error().PHP_EOL);
+            }
+        } else {
+            $oCli->color('error', "Group already exists.".PHP_EOL);
+        }
+    } else {
+        $oCli->color('error', "Doing nothing.".PHP_EOL);
+    }    
+}
+
+function actionGroupList(){
+    global $oHtgroup, $oCli, $bDebugActions;
+    $sFile=$oHtgroup->getFile();
+    h2("File: $sFile", "Content of current group file");
+    if(file_exists($sFile)){
+        $oCli->color("cli");
+        echo file_get_contents($sFile);
+        $oCli->color("reset");
+    } else {
+        $oCli->color('error', "ERROR: File '$sFile' doesn't exist yet.".PHP_EOL);
+    }
+}
+
+function actionGroupRemove(){
+    global $oHtgroup, $oCli, $bDebugActions;
+    h2("Remove a group", "Remove a group from ".basename($oHtgroup->getFile())."\n  WARNING: This function is dangerous. Check its members first!");
+    $sGroup=_selectGroup(false, "Group to remove");
+    if($sGroup){
+        $oHtgroup->debug($bDebugActions);
+        $bSuccess=$oHtgroup->remove($sGroup);
+        $oHtgroup->debug(false);
+        if($bSuccess){
+            $oCli->color('ok', "OK, group was removed.".PHP_EOL);
+        } else {
+            $oCli->color('error', "Action failed.".PHP_EOL.$oHtgroup->error().PHP_EOL);
+        }
+    } else {
+        $oCli->color('error', "Doing nothing.".PHP_EOL);
+    }    
+}
+
+function actionGroupAddUser(){
+    global $oHtpasswd,$oHtgroup, $oCli, $bDebugActions;
+    h2("Add user to group", "Select a user and add it to an existing group");
+    $sUser=_selectUser(true);
+    if($sUser){
+        if($oHtpasswd->exists($sUser)){
+            $sGroup=_selectGroup(true);
+            if($sGroup){
+                $oHtgroup->debug($bDebugActions);
+                $bSuccess=$oHtgroup->userAdd($sUser, $sGroup);
+                $oHtgroup->debug(false);
+                if($bSuccess){
+                    $oCli->color('ok', "OK, user was added to the group.".PHP_EOL);
+                } else {
+                    $oCli->color('error', "Action failed.".PHP_EOL.$oHtgroup->error().PHP_EOL);
+                }
+            } else {
+                $oCli->color('error', "Doing nothing - no group was given.".PHP_EOL);
+            }
+        } else {
+            $oCli->color('error', "Doing nothing - User '$sUser' does not exist.".PHP_EOL);
+        }
+    } else {
+        $oCli->color('error', "Doing nothing - no user was given.".PHP_EOL);
+    }
+}
+function actionGroupRemoveUser(){
+    global $oHtgroup, $oCli, $bDebugActions;
+    h2("Delete a user from a group", "Select a group and then one of its members to delete");
+    $sGroup=_selectGroup(true);
+    if($sGroup){
+        if($oHtgroup->exists($sGroup)){
+            $oCli->color('reset', PHP_EOL);
+            echo "Members of goup '$sGroup':".PHP_EOL;
+            $oCli->color('cli');
+            $bUserfound=false;
+            foreach($oHtgroup->members($sGroup) as $sUser){
+                echo "  $sUser".PHP_EOL;
+                $bUserfound=true;
+            }
+            if(!$bUserfound){
+                $oCli->color('error', "Group '$sGroup' has no members.".PHP_EOL);
+            } else {
+                echo PHP_EOL;
+                $sUser=$oCli->_cliInput("Username : ", "");
+                if($sUser){
+                    $oHtgroup->debug($bDebugActions);
+                    $bSuccess=$oHtgroup->userRemove($sUser, $sGroup);
+                    $oHtgroup->debug(false);
+                    if($bSuccess){
+                        $oCli->color('ok', "OK, user was removed from the group.".PHP_EOL);
+                    } else {
+                        $oCli->color('error', "Action failed.".PHP_EOL.$oHtgroup->error().PHP_EOL);
+                    }
+                } else {
+                    $oCli->color('error', "Doing nothing - no user was given.".PHP_EOL);
+                }
+            }
+        } else {
+            $oCli->color('error', "Group '$sGroup' doesn't exist.".PHP_EOL);
+        }
+    } else {
+        $oCli->color('error', "Doing nothing - no group was given.".PHP_EOL);
+    }
+}
+
+function actionVerify(){
+    global $oHtpasswd,$oHtgroup, $oCli;
+    h2("Verify", "Check users and groups");
+    $aWarnings=[];
+    $aErrors=[];
+    foreach ($oHtgroup->list() as $sGroup){
+        $aMembers=$oHtgroup->members($sGroup)??[];
+        if(count($aMembers)==0){
+            $aWarnings[]="Group '$sGroup' has no member.";
+        } else {
+            foreach($aMembers as $sUser){
+                if(!$oHtpasswd->exists($sUser)){
+                    $aErrors[]="Group '$sGroup' has the invalid member '$sUser'.";
+                }
+            }
+        }
+    }
+
+    // if minimum one group exists check if all users have a group
+    if($oHtgroup->list()){
+        foreach(array_keys($oHtpasswd->list()) as $sUser){
+            $sGroups="";
+            foreach ($oHtgroup->list() as $sGroup){
+                if (in_array($sUser, $oHtgroup->members($sGroup))) {
+                    $sGroups.="$sGroup, ";
+                }
+            }
+            if(!$sGroups){
+                $aWarnings[]="User '$sUser' has no group.";
+            }
+        }
+    }
+    echo "Errors  : ".count($aErrors).PHP_EOL;
+    echo "Warnings: ".count($aWarnings).PHP_EOL;
+    echo PHP_EOL;
+    if(count($aErrors)){
+        echo "Errors: ".PHP_EOL;
+        $oCli->color('error', "- " . implode("\n- ", $aErrors).PHP_EOL);
+        echo PHP_EOL;
+    }
+    if(count($aWarnings)){
+        echo "Warnings: ".PHP_EOL;
+        $oCli->color('warning', "- " . implode("\n- ", $aWarnings).PHP_EOL);
+        echo PHP_EOL;
+    }
+
+    if(!count($aErrors) && !count($aWarnings)){
+        $oCli->color('ok', "OK, everything is fine.".PHP_EOL);
+    }
+}
+
+function actionSetFolder(){
+    global $oCli, $FOLDER;
+    h2("Set a new folder", "Define another folder to work with - or ose --folder param");
+    $newfolder=$oCli->_cliInput("Folder : ", "");
+    if($newfolder){
+        if(is_dir($newfolder)){
+            $FOLDER=realpath($newfolder);
+        } else {
+            $oCli->color('error', "Folder '$newfolder' doesn't exist.".PHP_EOL);
+        }
+    } else {
+        $oCli->color('error', "Doing nothing - keeping current folder ...".PHP_EOL);
+    }
+}
 // ----------------------------------------------------------------------
 // MAIN
 // ----------------------------------------------------------------------
@@ -212,6 +535,27 @@ if(!is_dir($FOLDER)){
     echo "ERROR: Folder '$FOLDER' doesn't exist.".PHP_EOL.PHP_EOL;
     $oCli->color('reset');
     exit(1);
+}
+
+
+$oHtgroup=new axelhahn\htgroup("$FOLDER/.htgroup");
+$oHtpasswd=new axelhahn\htpasswd("$FOLDER/.htpasswd");
+
+$bDoAbort=false;
+foreach($oCli->getopt() as $sVarname => $sValue){
+    $bDoAbort=true;
+    switch($sVarname){
+        case "add-user":
+            actionUserAdd();
+            break;
+        case "list-user":
+            actionUserList();
+            break;
+    }
+}
+
+if($bDoAbort){
+    exit(0);
 }
 
 while(true){
@@ -296,302 +640,55 @@ while(true){
             exit(0);
 
         case 's':
-            $sFile=$oHtpasswd->getFile();
-            h2("File: $sFile", "Content of current user file");
-            if(file_exists($sFile)){
-                $oCli->color("cli");
-                echo file_get_contents($sFile);
-                $oCli->color("reset");
-            } else {
-                $oCli->color('error', "ERROR: File '$sFile' doesn't exist yet.".PHP_EOL);
-            }
+            actionUserShowfile();
             break;
 
         case 'S':
-            $sFile=$oHtgroup->getFile();
-            h2("File: $sFile", "Content of current group file");
-            if(file_exists($sFile)){
-                $oCli->color("cli");
-                echo file_get_contents($sFile);
-                $oCli->color("reset");
-            } else {
-                $oCli->color('error', "ERROR: File '$sFile' doesn't exist yet.".PHP_EOL);
-            }
+            actionGroupList();
             break;
 
         case 'a':
-            h2("Add user", "Add a new user in ".basename($oHtpasswd->getFile()));
-            $sUser=_selectUser(false, "New user", true);
-            // $sUser=$oCli->_cliInput("Username : ", "");
-            if ($sUser) {
-                if(!$oHtpasswd->exists($sUser)){
-                    
-                    $sPW=$oCli->_cliInput("Password : ", "");
-                    if ($sPW) {
-                        $oHtpasswd->debug($bDebugActions);
-                        $bSuccess=$oHtpasswd->add($sUser, $sPW);
-                        $oHtpasswd->debug(false);
-                        if($bSuccess){
-                            $oCli->color('ok', "OK, user was added.".PHP_EOL);
-                        } else {
-                            $oCli->color('error', "Action failed.".PHP_EOL.$oHtpasswd->error().PHP_EOL);
-                        }
-                    } else {
-                        $oCli->color('error', "Doing nothing - password is empty.".PHP_EOL);
-                    }
-                } else {
-                    $oCli->color('error', "User already exists.".PHP_EOL);
-                }
-            } else {
-                $oCli->color('error', "Doing nothing.".PHP_EOL);
-            }
+            actionUserAdd();
             break;
 
         case 'A':
-            h2("Add group", "Add a new group in ".basename($oHtgroup->getFile()));
-            $sGroup=_selectGroup(false, "New Group", true);
-            if ($sGroup) {
-                if(!$oHtgroup->exists($sGroup)){
-                    
-                    $oHtgroup->debug($bDebugActions);
-                    $bSuccess=$oHtgroup->add($sGroup);
-                    $oHtgroup->debug(false);
-                    if($bSuccess){
-                        $oCli->color('ok', "OK, group was added.".PHP_EOL);
-                    } else {
-                        $oCli->color('error', "Action failed.".PHP_EOL.$oHtgroup->error().PHP_EOL);
-                    }
-                } else {
-                    $oCli->color('error', "Group already exists.".PHP_EOL);
-                }
-            } else {
-                $oCli->color('error', "Doing nothing.".PHP_EOL);
-            }
+            actionGroupAdd();
             break;
 
         case 'l':
-            h2("List users", "Current users and their groups");
-            $oCli->color('cli');
-            foreach(array_keys($oHtpasswd->list()) as $sUser){
-                $sGroups="";
-                foreach ($oHtgroup->list() as $sGroup){
-                    if (in_array($sUser, $oHtgroup->members($sGroup))) {
-                        $sGroups.=($sGroups ? ", ": "") . "$sGroup";
-                    }
-                }
-                printf("  %-10s %s\n", "$sUser", $sGroups ? "👥 $sGroups": $oCli->getcolor('dark gray')."(no group)");
-            }
-            if(count($oHtpasswd->list())==0){
-                $oCli->color('error', "No users found.".PHP_EOL);
-            }
-            $oCli->color('reset');
+            actionUserList();
             break;
 
         case 'L':
-            h2("List groups", "Current groups and their members");
-            $oCli->color('cli');
-            foreach ($oHtgroup->list() as $sGroup){
-                $aMembers=$oHtgroup->members($sGroup)??[];
-                printf("  %-10s %s\n\n", "👥 $sGroup", count($aMembers) ? "\n     👤 " . implode("\n     👤 ", $aMembers): $oCli->getcolor('dark gray')."(no members)");
-            }
-            if(count($oHtgroup->list())==0){
-                $oCli->color('error', "No group was found.".PHP_EOL);
-            }
+            actionGroupList();
             break;
 
         case 'r':
-            h2("Remove a user", "Remove a user from ".basename($oHtpasswd->getFile()));
-            $sUser=_selectUser(false, "Usename to remove");
-            if($sUser){
-                $sGroups="";
-                foreach ($oHtgroup->list() as $sGroup){
-                    if (in_array($sUser, $oHtgroup->members($sGroup))) {
-                        $sGroups.=($sGroups ? ", ": "") . "$sGroup";
-                    }
-                }
-                if($sGroups){
-                    $oCli->color('error', "Aborting. Remove user from these groups first: $sGroups.".PHP_EOL);
-                } else {
-                    $oHtpasswd->debug($bDebugActions);
-                    $bSuccess=$oHtpasswd->remove($sUser);
-                    $oHtpasswd->debug(false);
-                    if($bSuccess){
-                        $oCli->color('ok', "OK, user was removed.".PHP_EOL);
-                    } else {
-                        $oCli->color('error', "Action failed.".PHP_EOL.$oHtpasswd->error().PHP_EOL);
-                    }
-                }
-            } else {
-                $oCli->color('error', "Doing nothing.".PHP_EOL);
-            }
+            actionUserRemove();
             break;
 
         case 'R':
-            h2("Remove a group", "Remove a group from ".basename($oHtgroup->getFile())."\n  WARNING: This function is dangerous. Check its members first!");
-            $sGroup=_selectGroup(false, "Group to remove");
-            if($sGroup){
-                $oHtgroup->debug($bDebugActions);
-                $bSuccess=$oHtgroup->remove($sGroup);
-                $oHtgroup->debug(false);
-                if($bSuccess){
-                    $oCli->color('ok', "OK, group was removed.".PHP_EOL);
-                } else {
-                    $oCli->color('error', "Action failed.".PHP_EOL.$oHtgroup->error().PHP_EOL);
-                }
-            } else {
-                $oCli->color('error', "Doing nothing.".PHP_EOL);
-            }
+            actionGroupRemove();
             break;
 
         case 'p':
-            h2("Set password", "Set a new password for a selected user");
-            $sUser=_selectUser(true);
-            if($sUser){
-                $sPW=trim($oCli->_cliInput("New password : ", ""));
-                if($sPW){
-                    $oHtpasswd->debug($bDebugActions);
-                    $bSuccess=$oHtpasswd->update($sUser, $sPW);
-                    $oHtpasswd->debug(false);
-                    if($bSuccess){
-                        $oCli->color('ok', "OK, password was changed.".PHP_EOL);
-                    } else {
-                        $oCli->color('error', "Action failed.".PHP_EOL.$oHtpasswd->error().PHP_EOL);
-                    }
-                } else {
-                    $oCli->color('error', "Doing nothing. No password was set".PHP_EOL);
-                }
-            } else {
-                $oCli->color('error', "Doing nothing.".PHP_EOL);
-            }
+            actionUserSetPassword();
             break;
 
         case 'U':
-            h2("Add user to group", "Select a user and add it to an existing group");
-            $sUser=_selectUser(true);
-            if($sUser){
-                if($oHtpasswd->exists($sUser)){
-                    $sGroup=_selectGroup(true);
-                    if($sGroup){
-                        $oHtgroup->debug($bDebugActions);
-                        $bSuccess=$oHtgroup->userAdd($sUser, $sGroup);
-                        $oHtgroup->debug(false);
-                        if($bSuccess){
-                            $oCli->color('ok', "OK, user was added to the group.".PHP_EOL);
-                        } else {
-                            $oCli->color('error', "Action failed.".PHP_EOL.$oHtgroup->error().PHP_EOL);
-                        }
-                    } else {
-                        $oCli->color('error', "Doing nothing - no group was given.".PHP_EOL);
-                    }
-                } else {
-                    $oCli->color('error', "Doing nothing - User '$sUser' does not exist.".PHP_EOL);
-                }
-            } else {
-                $oCli->color('error', "Doing nothing - no user was given.".PHP_EOL);
-            }
+            actionGroupAddUser();
             break;
 
         case 'D':
-            h2("Delete a user from a group", "Select a group and then one of its members to delete");
-            $sGroup=_selectGroup(true);
-            if($sGroup){
-                if($oHtgroup->exists($sGroup)){
-                    $oCli->color('reset', PHP_EOL);
-                    echo "Members of goup '$sGroup':".PHP_EOL;
-                    $oCli->color('cli');
-                    $bUserfound=false;
-                    foreach($oHtgroup->members($sGroup) as $sUser){
-                        echo "  $sUser".PHP_EOL;
-                        $bUserfound=true;
-                    }
-                    if(!$bUserfound){
-                        $oCli->color('error', "Group '$sGroup' has no members.".PHP_EOL);
-                    } else {
-                        echo PHP_EOL;
-                        $sUser=$oCli->_cliInput("Username : ", "");
-                        if($sUser){
-                            $oHtgroup->debug($bDebugActions);
-                            $bSuccess=$oHtgroup->userRemove($sUser, $sGroup);
-                            $oHtgroup->debug(false);
-                            if($bSuccess){
-                                $oCli->color('ok', "OK, user was removed from the group.".PHP_EOL);
-                            } else {
-                                $oCli->color('error', "Action failed.".PHP_EOL.$oHtgroup->error().PHP_EOL);
-                            }
-                        } else {
-                            $oCli->color('error', "Doing nothing - no user was given.".PHP_EOL);
-                        }
-                    }
-                } else {
-                    $oCli->color('error', "Group '$sGroup' doesn't exist.".PHP_EOL);
-                }
-            } else {
-                $oCli->color('error', "Doing nothing - no group was given.".PHP_EOL);
-            }
+            actionGroupRemoveUser();
             break;
 
         case 'v':
-            h2("Verify", "Check users and groups");
-            $aWarnings=[];
-            $aErrors=[];
-            foreach ($oHtgroup->list() as $sGroup){
-                $aMembers=$oHtgroup->members($sGroup)??[];
-                if(count($aMembers)==0){
-                    $aWarnings[]="Group '$sGroup' has no member.";
-                } else {
-                    foreach($aMembers as $sUser){
-                        if(!$oHtpasswd->exists($sUser)){
-                            $aErrors[]="Group '$sGroup' has the invalid member '$sUser'.";
-                        }
-                    }
-                }
-            }
-
-            // if minimum one group exists check if all users have a group
-            if($oHtgroup->list()){
-                foreach(array_keys($oHtpasswd->list()) as $sUser){
-                    $sGroups="";
-                    foreach ($oHtgroup->list() as $sGroup){
-                        if (in_array($sUser, $oHtgroup->members($sGroup))) {
-                            $sGroups.="$sGroup, ";
-                        }
-                    }
-                    if(!$sGroups){
-                        $aWarnings[]="User '$sUser' has no group.";
-                    }
-                }
-            }
-            echo "Errors  : ".count($aErrors).PHP_EOL;
-            echo "Warnings: ".count($aWarnings).PHP_EOL;
-            echo PHP_EOL;
-            if(count($aErrors)){
-                echo "Errors: ".PHP_EOL;
-                $oCli->color('error', "- " . implode("\n- ", $aErrors).PHP_EOL);
-                echo PHP_EOL;
-            }
-            if(count($aWarnings)){
-                echo "Warnings: ".PHP_EOL;
-                $oCli->color('warning', "- " . implode("\n- ", $aWarnings).PHP_EOL);
-                echo PHP_EOL;
-            }
-
-            if(!count($aErrors) && !count($aWarnings)){
-                $oCli->color('ok', "OK, everything is fine.".PHP_EOL);
-            }
+            actionVerify();
             break;
 
         case 'f':
-            h2("Set a new folder", "Define another folder to work with - or ose --folder param");
-            $newfolder=$oCli->_cliInput("Folder : ", "");
-            if($newfolder){
-                if(is_dir($newfolder)){
-                    $FOLDER=realpath($newfolder);
-                } else {
-                    $oCli->color('error', "Folder '$newfolder' doesn't exist.".PHP_EOL);
-                }
-            } else {
-                $oCli->color('error', "Doing nothing - keeping current folder ...".PHP_EOL);
-            }
+            actionSetFolder();
             break;
 
         default:
